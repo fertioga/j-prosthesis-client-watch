@@ -1,18 +1,20 @@
-#include <Arduino.h>
-
-// put function declarations here:
-int myFunction(int, int);
-
+#include "bootstrap.h"
+#include "ui/screen_main.h"
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+    Serial.begin(115200);
+    delay(1000);
+
+    Serial.println("Init Watch...");
+
+    screen_setup();
+
+    Serial.println("LVGL OK");
+
+    screen_main();
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+    lv_task_handler();
+    delay(10);
 }

@@ -1,0 +1,6 @@
+#pragma once
+
+#define LILYGO_WATCH_2020_V3                //To use T-Watch2020 V3, please uncomment this line
+#define LILYGO_WATCH_LVGL
+
+#include <LilyGoWatch.h>
