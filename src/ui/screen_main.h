@@ -4,19 +4,15 @@
 #include "ui/components/screen_leonardo/screen_leonardo.h"
 #include "ui/components/screen_donatelo/screen_donatelo.h"
 
-void screen_setup() {
-    Serial.println("Init Watch...");
-    TTGOClass *ttgo;
+
+void screen_main(TTGOClass *&ttgo) 
+{
     ttgo = TTGOClass::getWatch();
     ttgo->begin();
     ttgo->openBL();
     lv_init();
     ttgo->lvgl_begin();
 
-    Serial.println("LVGL OK");
-}
-
-void screen_main() {
     lv_obj_t * tv = lv_tileview_create(lv_scr_act());
     
     lv_obj_set_scroll_dir(tv, LV_DIR_HOR); // only horizontal scroll
@@ -27,4 +23,28 @@ void screen_main() {
     screen_home(tv, 0);
     screen_leonardo(tv, 1);
     screen_donatelo(tv, 2);
+}
+
+void screen_sleep(TTGOClass *&ttgo, bool *&screenOn)
+{
+    ttgo->displaySleep();
+    ttgo->closeBL();
+    *screenOn = false;  
+}
+
+void screen_wakeup(TTGOClass *&ttgo, bool *&screenOn)
+{
+    ttgo->displayWakeup();
+    ttgo->openBL();
+    *screenOn = true;         
+}
+
+void userInteraction(TTGOClass *&ttgo, bool *&screenOn, unsigned long &lastInteraction)
+{
+    lastInteraction = millis();
+
+    if (!*screenOn)
+    {
+        screen_wakeup(ttgo, screenOn);
+    }
 }
