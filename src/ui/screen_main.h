@@ -1,3 +1,4 @@
+#pragma once
 #include "bootstrap.h"
 
 #include "ui/components/screen_home/screen_home.h"
@@ -30,19 +31,21 @@ void screen_sleep(TTGOClass *&ttgo, bool *&screenOn)
     ttgo->displaySleep();
     ttgo->closeBL();
     *screenOn = false;  
+    Serial.println("Sleeping...");
+    delay(20);
 }
 
 void screen_wakeup(TTGOClass *&ttgo, bool *&screenOn)
 {
     ttgo->displayWakeup();
     ttgo->openBL();
-    *screenOn = true;         
+    *screenOn = true;        
+    Serial.println("Wakeup...");
+    delay(20); // Delay to avoid screen artifacts on wakeup
 }
 
-void userInteraction(TTGOClass *&ttgo, bool *&screenOn, unsigned long &lastInteraction)
+void userInteraction(TTGOClass *&ttgo, bool *&screenOn)
 {
-    lastInteraction = millis();
-
     if (!*screenOn)
     {
         screen_wakeup(ttgo, screenOn);

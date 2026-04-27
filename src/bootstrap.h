@@ -4,3 +4,8 @@
 #define LILYGO_WATCH_LVGL
 
 #include <LilyGoWatch.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#include "ui/screen_main.h"
+#include "ui/screen_sleep.h"
