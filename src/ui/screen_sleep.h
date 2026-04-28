@@ -72,10 +72,10 @@ void screen_button_detection(TTGOClass *ttgo, bool *screenOn, unsigned long *las
 
 }
 
-void screen_sleep_task(void* param) {
+void screen_sleep_exec(void* param) {
 
     ScreenSleepContext *ctx = (ScreenSleepContext *)param;
-
+    
     TTGOClass *ttgo = ctx->ttgo;
     bool *screenOn = ctx->screenOn;    
 
@@ -94,8 +94,8 @@ void screen_sleep_task(void* param) {
     }
 }
 
-void screen_sleep_setup(TTGOClass *&ttgo, bool *&screenOn) 
+void screen_sleep_task(TTGOClass *&ttgo, bool *&screenOn) 
 {
     ScreenSleepContext* ctx = new ScreenSleepContext{ttgo, screenOn};
-    xTaskCreate(screen_sleep_task, "ScreenSleep", 2048, ctx, 1, nullptr);
+    xTaskCreate(screen_sleep_exec, "ScreenSleep", 2048, ctx, 1, nullptr);
 }
