@@ -94,7 +94,7 @@ void screen_sleep_exec(void* param) {
     }
 }
 
-void screen_sleep_task(TTGOClass *&ttgo, bool *&screenOn) 
+void screen_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn) 
 {
     ScreenSleepContext* ctx = new ScreenSleepContext{ttgo, screenOn};
     xTaskCreate(screen_sleep_exec, "ScreenSleep", 2048, ctx, 1, nullptr);

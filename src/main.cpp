@@ -20,7 +20,7 @@ void setup() {
 
     screen_main(ttgo);  
 
-    screen_sleep_task(ttgo, screenOn);
+    screen_sleep_service_task(ttgo, screenOn);
 
     watch_battery_service_task(ttgo, watchBatteryLevel);
     
