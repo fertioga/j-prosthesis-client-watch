@@ -6,7 +6,7 @@
 #include "ui/components/screen_donatelo/screen_donatelo.h"
 
 
-void screen_main(TTGOClass *&ttgo) 
+void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryLevel) 
 {
     ttgo = TTGOClass::getWatch();
     ttgo->begin();
@@ -21,7 +21,7 @@ void screen_main(TTGOClass *&ttgo)
     lv_obj_clear_flag(tv, LV_OBJ_FLAG_SCROLL_ELASTIC); // disable elastic scroll
 
     /*sequence tiles*/    
-    screen_home(tv, 0);
+    screen_home(tv, ttgo, 0);
     screen_leonardo(tv, 1);
     screen_donatelo(tv, 2);
 }
