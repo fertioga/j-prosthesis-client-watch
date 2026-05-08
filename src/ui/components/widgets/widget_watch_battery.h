@@ -12,14 +12,6 @@ struct WatchBatteryContext {
     lv_obj_t * parent;
 };
 
-int batteryPercentFromVoltage(float voltage)
-{
-    if (voltage >= 4.20) return 100;
-    if (voltage <= 3.30) return 0;
-
-    return (int)(((voltage - 3.30) / (4.20 - 3.30)) * 100.0);
-}
-
 lv_obj_t * create_battery_container(lv_obj_t * parent)
 {
     lv_obj_t * container = lv_obj_create(parent);
@@ -83,9 +75,7 @@ void watch_battery_exec(void* param) {
     while (true) {
         if (ttgo->power) {
 
-            float voltage = ttgo->power->getBattVoltage() / 1000.0;
-
-            int battery = batteryPercentFromVoltage(voltage);
+            int battery = (int)ttgo->power->getBattPercentage();
 
             lv_bar_set_value(batteryBar, battery, LV_ANIM_OFF);
 
