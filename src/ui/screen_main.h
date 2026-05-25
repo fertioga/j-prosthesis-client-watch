@@ -22,7 +22,7 @@ void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryLevel)
 
     /*sequence tiles*/    
     screen_home(tv, ttgo, 0);
-    screen_leonardo(tv, 1);
+    screen_leonardo(tv, ttgo, *&screenOn, 1);
     screen_donatelo(tv, 2);
 }
 
