@@ -1,8 +1,11 @@
 #include "bootstrap.h"
 
 #include "ui/screen_main.h"
+#include "services/bluetooth/WatchBleClient.h"
 
 TTGOClass *ttgo;
+
+WatchBleClient ble;
 
 bool *screenOn = nullptr; // Pointer to store screen on/off state read by the screen_sleep_service_task
 float *watchBatteryLevel = nullptr; // Pointer to store battery level read by the watch_battery_service_task
@@ -15,6 +18,15 @@ void setup() {
 
     screenOn = new bool(true);
     watchBatteryLevel = new float(0.00);
+
+    if (ble.connect())
+    {
+        Serial.println("BLE conectado");
+    }
+    else
+    {
+        Serial.println("BLE falhou");
+    }
 
     screen_main(ttgo, screenOn, watchBatteryLevel);  
     

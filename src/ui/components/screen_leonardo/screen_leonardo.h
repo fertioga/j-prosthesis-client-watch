@@ -1,5 +1,6 @@
 #include "bootstrap.h"
 #include "assets/leonardo.h"
+#include "services/bluetooth/WatchBleClient.h"
 
 struct ScreenLeoContext {
     TTGOClass *ttgo;
@@ -20,6 +21,8 @@ void screen_leo_task_loop(void* param)
     const uint32_t DEBOUNCE_MS_TOUCH = 800;
     unsigned long *lastTouchInteraction = new unsigned long(millis());
 
+    WatchBleClient ble;
+
     while (true)
     {        
         if (ttgo->getTouch(x, y))
@@ -32,7 +35,10 @@ void screen_leo_task_loop(void* param)
                 (millis() - *lastTouchInteraction > DEBOUNCE_MS_TOUCH)
                 )
             {
+
                 Serial.println("apertou tela Leonardo");
+
+                ble.send(0xFF); // Example command, adjust as needed
 
                 *lastTouchInteraction = millis();
             }
