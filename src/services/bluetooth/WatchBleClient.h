@@ -3,6 +3,8 @@
 #include "bootstrap.h"
 #include <NimBLEDevice.h>
 
+static constexpr const char* BLE_CONF_DEVICE_NAME = "J1-Prosthesis";
+
 static constexpr const char* BLE_CONF_MAIN_SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
 
 static constexpr const char* BLE_CONF_LED_UUID = "12345678-1234-1234-1234-1234567890ac";
@@ -164,14 +166,22 @@ public:
             const NimBLEAdvertisedDevice* dev =
                 results.getDevice(i);
 
-            if (
+            const bool nameMatch =
+                dev->haveName() &&
+                (dev->getName() == BLE_CONF_DEVICE_NAME);
+
+            const bool uuidMatch =
                 dev->haveServiceUUID() &&
                 dev->isAdvertisingService(
                     NimBLEUUID(BLE_CONF_MAIN_SERVICE_UUID)
-                )
-            )
+                );
+
+            if (nameMatch || uuidMatch)
             {
-                Serial.println("Dispositivo encontrado");
+                Serial.printf(
+                    "Dispositivo encontrado (%s)\n",
+                    nameMatch ? "nome" : "uuid"
+                );
 
                 found = true;
                 connected = connectToDevice(dev);
@@ -181,7 +191,21 @@ public:
 
         if (!found)
         {
-            Serial.println("Dispositivo não encontrado");
+            Serial.printf(
+                "Dispositivo não encontrado (scan=%d)\n",
+                results.getCount()
+            );
+
+            for (int i = 0; i < results.getCount(); i++)
+            {
+                const NimBLEAdvertisedDevice* dev =
+                    results.getDevice(i);
+
+                if (dev->haveName())
+                {
+                    Serial.printf("  visto: %s\n", dev->getName().c_str());
+                }
+            }
         }
 
         scan->clearResults();
