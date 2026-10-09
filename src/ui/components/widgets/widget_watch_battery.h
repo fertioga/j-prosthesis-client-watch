@@ -70,12 +70,26 @@ void watch_battery_exec(void* param) {
     lv_obj_t * batteryBar = create_bar_battery(batteryContainer, nullptr);
     lv_obj_t * batteryLabel = create_label_battery(batteryContainer);
     lv_obj_t * chargeIcon = create_charge_icon(batteryContainer);
-    
+
+    if (ttgo->power) {
+        ttgo->power->adc1Enable(
+            AXP202_VBUS_VOL_ADC1 |
+            AXP202_VBUS_CUR_ADC1 |
+            AXP202_BATT_CUR_ADC1 |
+            AXP202_BATT_VOL_ADC1,
+            true);
+    }
+
     // Update battery level in an infinite loop
     while (true) {
         if (ttgo->power) {
 
-            int battery = (int)ttgo->power->getBattPercentage();
+            int battery = ttgo->power->getBattPercentage();
+            if (battery < 0) {
+                battery = 0;
+            } else if (battery > 100) {
+                battery = 100;
+            }
 
             lv_bar_set_value(batteryBar, battery, LV_ANIM_OFF);
 
