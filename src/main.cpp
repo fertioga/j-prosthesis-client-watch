@@ -19,16 +19,9 @@ void setup() {
     screenOn = new bool(true);
     watchBatteryLevel = new float(0.00);
 
-    if (ble.connect())
-    {
-        Serial.println("BLE conectado");
-    }
-    else
-    {
-        Serial.println("BLE falhou");
-    }
+    ble.startConnectionTask();
 
-    screen_main(ttgo, screenOn, watchBatteryLevel);  
+    screen_main(ttgo, screenOn, watchBatteryLevel, &ble);  
     
     screen_sleep_service_task(ttgo, screenOn);
 
