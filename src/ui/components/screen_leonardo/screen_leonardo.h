@@ -7,6 +7,7 @@ struct ScreenLeoContext {
     bool *screenOn;
     lv_obj_t *tv;
     lv_obj_t *tile_leo;
+    WatchBleClient *ble;
 };
 
 void screen_leo_task_loop(void* param)
@@ -21,7 +22,7 @@ void screen_leo_task_loop(void* param)
     const uint32_t DEBOUNCE_MS_TOUCH = 800;
     unsigned long *lastTouchInteraction = new unsigned long(millis());
 
-    WatchBleClient ble;
+    WatchBleClient *ble = ctx->ble;
 
     while (true)
     {        
@@ -38,7 +39,10 @@ void screen_leo_task_loop(void* param)
 
                 Serial.println("apertou tela Leonardo");
 
-                ble.send(0xFF); // Example command, adjust as needed
+                if (!ble->send(0xFF, 0x00, 0x00, 0xFF, LED_EFFECT_ON))
+                {
+                    Serial.println("Falha ao enviar comando LED via BLE");
+                }
 
                 *lastTouchInteraction = millis();
             }
@@ -48,13 +52,13 @@ void screen_leo_task_loop(void* param)
     }
 }
 
-void screen_leo_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_leo) 
+void screen_leo_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_leo, WatchBleClient *ble) 
 {
-    ScreenLeoContext* ctx = new ScreenLeoContext{ttgo, screenOn, tv, tile_leo};
+    ScreenLeoContext* ctx = new ScreenLeoContext{ttgo, screenOn, tv, tile_leo, ble};
     xTaskCreate(screen_leo_task_loop, "screen_leo_task_loop", 2048, ctx, 1, nullptr);
 }
 
-void screen_leonardo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, int col) {
+void screen_leonardo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, int col) {
     lv_obj_t * tile_leo = lv_tileview_add_tile(tv, col, 0, LV_DIR_HOR);
     
     // lv_obj_t * label = lv_label_create(tile_leo);
@@ -70,6 +74,6 @@ void screen_leonardo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, int col) 
 
     lv_obj_center(img);    
 
-    screen_leo_sleep_service_task(ttgo, screenOn, tv, tile_leo);
+    screen_leo_sleep_service_task(ttgo, screenOn, tv, tile_leo, ble);
 }
 
