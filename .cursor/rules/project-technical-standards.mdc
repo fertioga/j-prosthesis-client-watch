@@ -1,0 +1,204 @@
+---
+description: Definição técnica e padrões de projeto do j-prosthesis-client-watch — stack, layout, UI (screens/widgets) e services BLE/energia.
+alwaysApply: true
+---
+
+# Project Technical Standards
+
+Definição técnica e de padrão de projeto do firmware `j-prosthesis-client-watch`.
+Alinha com a constituição em `.specify/memory/constitution.md`.
+
+**Escopo:** somente este repositório (firmware do smartwatch). Server da
+prótese, cloud e dashboard são sistemas vizinhos.
+
+## 1. Stack Canônica
+
+**Não inventar stack. Usar o que está em `platformio.ini`.**
+
+| Camada | Valor |
+|--------|--------|
+| Build | PlatformIO |
+| Platform | `espressif32` |
+| Board / env | `ttgo-t-watch` (`[env:ttgo-t-watch]`) |
+| Hardware | LilyGo T-Watch 2020 V3 (`LILYGO_WATCH_2020_V3` em `bootstrap.h`) |
+| Framework | Arduino (+ FreeRTOS do core ESP32) |
+| UI | LVGL via TTGO TWatch Library (`LILYGO_WATCH_LVGL`) |
+| BLE | NimBLE-Arduino como **cliente** (não servidor GATT) |
+| Linguagem | C++ estilo Arduino (headers `.h` no padrão atual; preferir `#pragma once`) |
+| Serial monitor | 115200 |
+
+Dependências (`lib_deps` em `platformio.ini`) — respeitar ranges:
+
+- `null0/TTGO TWatch Library V8@^1.4.2`
+- `h2zero/NimBLE-Arduino@^2.3.7`
+
+`build_flags` obrigatórios existentes:
+
+- `-DLV_CONF_INCLUDE_SIMPLE`
+
+Ao adicionar lib: declarar em `platformio.ini` com versão semver (`^x.y.z`).
+Não versionar `.pio/`.
+
+**Wi-Fi / NTP** são suporte (hora via RTC), não caminho crítico de comando
+à prótese. Não adicionar stacks de cloud/HTTP “por padrão”.
+
+## 2. Layout de Diretórios
+
+**Coloque cada tipo de arquivo no lugar certo. Não invente pastas paralelas.**
+
+```
+j-prosthesis-client-watch/
+├── platformio.ini              # env, board, lib_deps, build_flags
+├── include/                    # headers públicos extras (PlatformIO)
+├── lib/                        # libs locais privadas do projeto
+├── test/                       # testes PlatformIO
+├── src/
+│   ├── main.cpp                # wiring: BLE, screen_main, sleep; loop = LVGL
+│   ├── bootstrap.h             # board macros + includes comuns (TTGO, RTOS, WiFi)
+│   ├── config/                 # constantes (NTP, Wi-Fi local — sem secrets no git)
+│   ├── assets/                 # bitmaps/imagens LVGL (ex.: leonardo.h)
+│   ├── services/               # hardware/infra (BLE, sleep, wifi, ntp, power)
+│   │   ├── bluetooth/          # WatchBleClient (GATT client)
+│   │   ├── screen_sleep/       # sleep/wakeup + task de toque/botão
+│   │   ├── wifi/
+│   │   └── ntp/
+│   └── ui/
+│       ├── screen_main.h       # tileview root + registro de tiles/telas
+│       └── components/
+│           ├── screen_<nome>/  # uma pasta por tela (tile)
+│           │   └── screen_<nome>.h
+│           └── widgets/        # widgets reutilizáveis entre telas
+│               └── widget_<nome>.h
+├── .specify/                   # SpecKit (constitution, specs, plans, tasks)
+└── .cursor/rules/              # rules do agente
+```
+
+Regras de colocação:
+
+- Macros de board / includes globais → `src/bootstrap.h`
+- Constantes NTP, timeouts de sync → `src/config/ntp.h` (ou equivalente)
+- Credenciais Wi-Fi → **não** versionar; usar arquivo local ignorado pelo git
+  ou build flags / secrets injetados no build
+- UUIDs e payloads BLE → `services/bluetooth/` (espelhar contrato do server;
+  não inventar UUIDs)
+- Novo periférico / I/O → `src/services/<domínio>/`
+- Nova tela (tile) → `src/ui/components/screen_<nome>/screen_<nome>.h` +
+  registro em `screen_main.h`
+- Novo widget reutilizável → `src/ui/components/widgets/widget_<nome>.h`
+- Imagens / assets LVGL → `src/assets/`
+
+## 3. Arquitetura Modular
+
+**Services encapsulam HW/infra. UI compõe telas e widgets. main só faz wiring.**
+
+Camadas (de baixo para cima):
+
+1. **Service** — BLE client, sleep de tela, Wi-Fi, NTP/RTC, power/bateria.
+   API estável; sem widgets LVGL embutidos (exceto o mínimo necessário para
+   services puramente de UI-system, ex. sleep).
+2. **Widget** — pedaço reutilizável de UI LVGL (relógio, bateria, status BLE).
+   Pode ter task FreeRTOS própria para atualização periódica.
+3. **Screen** — um tile do `lv_tileview`: compõe widgets e handlers de
+   gesto/toque daquela tela. Chama services para comandos (ex.: LED via BLE);
+   **não** reimplementa scan/connect/GATT.
+4. **screen_main** — cria o tileview, define direção/snap, registra tiles na
+   ordem de colunas.
+5. **main.cpp** — `setup()`: Serial, estado compartilhado (`screenOn`, etc.),
+   connect BLE (não bloqueante eterno), `screen_main`, tasks de sistema
+   (sleep). `loop()`: só `lv_task_handler()` + delay curto (~30 ms).
+
+### 3.1 Organização de páginas (screens)
+
+Navegação canônica: **tileview horizontal** (`LV_DIR_HOR`, snap center).
+
+Padrão ao criar uma tela:
+
+1. Criar `src/ui/components/screen_<nome>/screen_<nome>.h`.
+2. Função de entrada no formato:
+   `void screen_<nome>(lv_obj_t *tv, /* deps */, int col);`
+3. Dentro: `lv_tileview_add_tile(tv, col, 0, LV_DIR_HOR);` e montar UI no tile.
+4. Registrar em `screen_main.h` na sequência de colunas (0, 1, 2, …).
+5. Passar só as dependências necessárias (`TTGOClass*`, `bool *screenOn`, etc.).
+
+Exemplos atuais: `screen_home` (col 0), `screen_leonardo` (col 1),
+`screen_donatelo` (col 2).
+
+Telas de engajamento (personagens) disparam comandos via service BLE; status
+operacional (conectado / falha) NÃO deve ser omitido quando a feature o exigir
+(constituição VI).
+
+### 3.2 Widgets
+
+Padrão ao criar um widget:
+
+1. Arquivo `src/ui/components/widgets/widget_<nome>.h`.
+2. Separar criação de objetos LVGL (`create_*`) da task de update (`*_exec`).
+3. Expor entry de task: `widget_<nome>_task(...)` ou
+   `widget_<nome>_service_task(...)` usando `xTaskCreate`.
+4. Context tipado (`struct ...Context`) com `TTGOClass*` + `lv_obj_t *parent`
+   (e outros ponteiros necessários).
+5. Defines de stack/prioridade/nome da task no topo do header
+   (ex.: `WATCH_BATTERY_TASK_STACK_SIZE`).
+6. Update periódico com `vTaskDelay` — **não** `delay()` longo na task de UI
+   crítica; não bloquear o loop LVGL.
+
+Widgets conhecidos: `widget_clock`, `widget_watch_battery`.
+
+### 3.3 Services e FreeRTOS
+
+- Polling de toque, botão, bateria, BLE I/O longo → FreeRTOS task.
+- Debounce de toque/botão: seguir ordem de grandeza já usada (~800 ms) salvo
+  spec diferente.
+- Screen timeout / sleep: concentrar em `services/screen_sleep/`; telas não
+  reinventam sleep.
+- Falha de BLE/Wi-Fi/NTP: degradar; UI local (hora, bateria, navegação) deve
+  continuar.
+
+### 3.4 Estilo de código
+
+- Match do estilo existente: `#pragma once`, funções C-style / classes leves,
+  includes via paths `ui/...`, `services/...`, `config/...`.
+- Tipos/includes comuns via `bootstrap.h` quando já for o padrão local.
+- Preferir structs de payload BLE tipadas (espelho do server) em vez de magic
+  bytes soltos na UI.
+
+## 4. Contratos BLE e Dados
+
+**O client é consumidor do contrato do server. Não quebrar nem divergir em silêncio.**
+
+- UUIDs de service/characteristic e layouts de payload MUST alinhar com o
+  server (`BleConfig` / docs / structs do `j-prosthesis-server`).
+- Breaking change → bump MAJOR do contrato + atualização coordenada
+  client/server.
+- Comandos (write) e leituras (notify/read, quando existirem) passam pelo
+  service BLE; screens/widgets só chamam a API do service.
+- Builds de produção: não logar PII no Serial.
+- Credenciais e segredos NÃO entram no git.
+
+## 5. Energia e UX Vestível
+
+- Sleep/wakeup de display é comportamento de produto, não detalhe opcional.
+- Evitar tela sempre ligada; respeitar timeout e wakeup por toque/botão.
+- Não manter Wi-Fi ligado o tempo todo; conectar sob demanda (ex.: sync NTP)
+  e desconectar depois.
+- Não bloquear `loop()` com scan BLE longo ou `while (WiFi.status()...)`
+  sem timeout — preferir task + estado na UI.
+
+## 6. O Que Não Fazer
+
+**YAGNI embarcado. Recursos finitos no watch.**
+
+- Não adicionar middleware/stack “para o futuro” sem feature aprovada.
+- Não colocar lógica de domínio em `src/main.cpp` além do wiring.
+- Não embutir protocolo BLE (UUIDs, parse de payload) dentro de
+  `screen_*` / widgets — usar `services/bluetooth/`.
+- Não criar segunda navegação paralela ao tileview sem spec (ex.: stack de
+  activities genérica).
+- Não alterar `platformio.ini` (board/platform/libs) sem necessidade explícita
+  e alinhamento com a constituição.
+- Não editar o server / cloud sob a égide desta rule.
+- Não versionar `.pio/` nem credenciais em `src/config/`.
+
+**Tradeoff:** esta rule privilegia previsibilidade do firmware vestível
+clínico-assistivo e coerência com o contrato BLE do server sobre
+flexibilidade genérica de app smartwatch.
