@@ -19,36 +19,53 @@ void screen_leo_task_loop(void* param)
     lv_obj_t *tile_leo = ctx->tile_leo;
     short x, y;
 
-    const uint32_t DEBOUNCE_MS_TOUCH = 800;
-    unsigned long *lastTouchInteraction = new unsigned long(millis());
+    const uint32_t HOLD_MS = 800;
+    bool touching = false;
+    bool holdSent = false;
+    bool ledOn = false;
+    unsigned long pressStartedAt = 0;
 
     WatchBleClient *ble = ctx->ble;
 
     while (true)
-    {        
-        if (ttgo->getTouch(x, y))
+    {
+        lv_obj_t *active_tile = lv_tileview_get_tile_act(tv);
+        const bool onLeo = *screenOn && active_tile == tile_leo;
+
+        if (onLeo && ttgo->getTouch(x, y))
         {
-            lv_obj_t * active_tile = lv_tileview_get_tile_act(tv) ;
-
-            if (
-                *screenOn && 
-                active_tile == tile_leo && 
-                (millis() - *lastTouchInteraction > DEBOUNCE_MS_TOUCH)
-                )
+            if (!touching)
             {
+                touching = true;
+                holdSent = false;
+                pressStartedAt = millis();
+            }
+            else if (!holdSent && (millis() - pressStartedAt >= HOLD_MS))
+            {
+                holdSent = true;
 
-                Serial.println("apertou tela Leonardo");
+                const bool ok = ledOn
+                    ? ble->send(0, 0, 0, 0, LED_EFFECT_OFF)
+                    : ble->send(0x00, 0x00, 0xFF, 0xFF, LED_EFFECT_ON);
 
-                if (!ble->send(0xFF, 0x00, 0x00, 0xFF, LED_EFFECT_ON))
+                if (!ok)
                 {
                     Serial.println("Falha ao enviar comando LED via BLE");
                 }
-
-                *lastTouchInteraction = millis();
+                else
+                {
+                    ledOn = !ledOn;
+                    Serial.println(ledOn ? "Leonardo LED ON" : "Leonardo LED OFF");
+                }
             }
         }
+        else
+        {
+            touching = false;
+            holdSent = false;
+        }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 

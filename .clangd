@@ -1,0 +1,24 @@
+# Apple clangd has no Xtensa target, so it parses this ESP32 project as
+# x86_64-apple-macosx (Mach-O). ESP-IDF section(".iram1") attributes are
+# valid ELF names and then fail. arm-none-eabi is ELF and 32-bit, which
+# matches the ESP32 ABI closely enough for editor diagnostics.
+CompileFlags:
+  Add:
+    # compile_commands quotes "-DARDUINO_BOARD=\"TTGO T-Watch\"" and clangd's
+    # command parser swallows the following -I flags up to the next quote
+    # (the TTGO library path). Restore the dropped project/lib includes.
+    - -I/Users/fernando/Documents/arquivos/protese/j-prosthesis-client-watch/include
+    - -I/Users/fernando/Documents/arquivos/protese/j-prosthesis-client-watch/src
+    - -I/Users/fernando/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src
+    - -I/Users/fernando/Documents/arquivos/protese/j-prosthesis-client-watch/.pio/libdeps/ttgo-t-watch/NimBLE-Arduino/src
+    - --target=arm-none-eabi
+    - --sysroot=/Users/fernando/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf
+    - -isystem/Users/fernando/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0
+    - -isystem/Users/fernando/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0/xtensa-esp32-elf
+    - -isystem/Users/fernando/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include
+  Remove:
+    - -mfix-esp32-psram-cache-issue
+    - -mfix-esp32-psram-cache-strategy=*
+    - -mlongcalls
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion

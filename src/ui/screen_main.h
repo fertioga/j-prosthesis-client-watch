@@ -1,5 +1,5 @@
 #pragma once
-#include "bootstrap.h"
+#include "../bootstrap.h"
 
 #include "ui/components/screen_home/screen_home.h"
 #include "ui/components/screen_leonardo/screen_leonardo.h"

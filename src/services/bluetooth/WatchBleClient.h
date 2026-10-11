@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bootstrap.h"
+#include "../../bootstrap.h"
 #include <NimBLEDevice.h>
 
 static constexpr const char* BLE_CONF_DEVICE_NAME = "J1-Prosthesis";
