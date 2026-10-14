@@ -4,6 +4,7 @@
 #include "ui/components/screen_home/screen_home.h"
 #include "ui/components/screen_leonardo/screen_leonardo.h"
 #include "ui/components/screen_donatelo/screen_donatelo.h"
+#include "ui/components/screen_rafael/screen_rafael.h"
 #include "services/bluetooth/WatchBleClient.h"
 
 
@@ -24,7 +25,8 @@ void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryLevel, W
     /*sequence tiles*/    
     screen_home(tv, ttgo, 0);
     screen_leonardo(tv, ttgo, *&screenOn, ble, 1);
-    screen_donatelo(tv, 2);
+    screen_donatelo(tv, ttgo, *&screenOn, ble, 2);
+    screen_rafael(tv, ttgo, *&screenOn, ble, 3);
 }
 
 void screen_sleep(TTGOClass *&ttgo, bool *&screenOn)
