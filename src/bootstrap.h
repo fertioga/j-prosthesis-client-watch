@@ -9,6 +9,3 @@
 #include <WiFi.h>
 #include <time.h>
 #include <TTGO.h>
-
-#include "ui/screen_main.h"
-#include "services/screen_sleep/screen_sleep_service.h"

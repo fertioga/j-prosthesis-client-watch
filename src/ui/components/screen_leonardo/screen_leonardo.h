@@ -1,6 +1,12 @@
+#pragma once 
 #include "bootstrap.h"
 #include "assets/leonardo.h"
 #include "services/bluetooth/WatchBleClient.h"
+#include "ui/led_rgb.h"
+
+static constexpr uint8_t LEO_LED_R = 0x00;
+static constexpr uint8_t LEO_LED_G = 0x00;
+static constexpr uint8_t LEO_LED_B = 0xFF;
 
 struct ScreenLeoContext {
     TTGOClass *ttgo;
@@ -8,6 +14,7 @@ struct ScreenLeoContext {
     lv_obj_t *tv;
     lv_obj_t *tile_leo;
     WatchBleClient *ble;
+    LedRgb *led;
 };
 
 void screen_leo_task_loop(void* param)
@@ -22,10 +29,10 @@ void screen_leo_task_loop(void* param)
     const uint32_t HOLD_MS = 800;
     bool touching = false;
     bool holdSent = false;
-    bool ledOn = false;
     unsigned long pressStartedAt = 0;
 
     WatchBleClient *ble = ctx->ble;
+    LedRgb *led = ctx->led;
 
     while (true)
     {
@@ -44,18 +51,16 @@ void screen_leo_task_loop(void* param)
             {
                 holdSent = true;
 
-                const bool ok = ledOn
-                    ? ble->send(0, 0, 0, 0, LED_EFFECT_OFF)
-                    : ble->send(0x00, 0x00, 0xFF, 0xFF, LED_EFFECT_ON);
+                const bool okLeo = apply_screen_led(ble, led, LEO_LED_R, LEO_LED_G, LEO_LED_B);
 
-                if (!ok)
+                if (!okLeo)
                 {
                     Serial.println("Falha ao enviar comando LED via BLE");
                 }
                 else
                 {
-                    ledOn = !ledOn;
-                    Serial.println(ledOn ? "Leonardo LED ON" : "Leonardo LED OFF");
+                    const bool ledOff = led->r == 0 && led->g == 0 && led->b == 0;
+                    Serial.println(ledOff ? "Leonardo LED OFF" : "Leonardo LED ON");
                 }
             }
         }
@@ -69,13 +74,13 @@ void screen_leo_task_loop(void* param)
     }
 }
 
-void screen_leo_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_leo, WatchBleClient *ble) 
+void screen_leo_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_leo, WatchBleClient *ble, LedRgb *led) 
 {
-    ScreenLeoContext* ctx = new ScreenLeoContext{ttgo, screenOn, tv, tile_leo, ble};
+    ScreenLeoContext* ctx = new ScreenLeoContext{ttgo, screenOn, tv, tile_leo, ble, led};
     xTaskCreate(screen_leo_task_loop, "screen_leo_task_loop", 2048, ctx, 1, nullptr);
 }
 
-void screen_leonardo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, int col) {
+void screen_leonardo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, LedRgb *led, int col) {
     lv_obj_t * tile_leo = lv_tileview_add_tile(tv, col, 0, LV_DIR_HOR);
     
     // lv_obj_t * label = lv_label_create(tile_leo);
@@ -91,6 +96,6 @@ void screen_leonardo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleC
 
     lv_obj_center(img);    
 
-    screen_leo_sleep_service_task(ttgo, screenOn, tv, tile_leo, ble);
+    screen_leo_sleep_service_task(ttgo, screenOn, tv, tile_leo, ble, led);
 }
 

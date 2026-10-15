@@ -1,5 +1,6 @@
 #pragma once    
 #include "bootstrap.h"
+#include "ui/screen_main.h"
 
 struct ScreenSleepContext {
     TTGOClass *ttgo;

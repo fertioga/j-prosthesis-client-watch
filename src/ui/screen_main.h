@@ -6,6 +6,7 @@
 #include "ui/components/screen_donatelo/screen_donatelo.h"
 #include "ui/components/screen_rafael/screen_rafael.h"
 #include "services/bluetooth/WatchBleClient.h"
+#include "ui/led_rgb.h"
 
 
 void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryLevel, WatchBleClient *ble) 
@@ -22,11 +23,13 @@ void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryLevel, W
     lv_obj_set_scroll_snap_x(tv, LV_SCROLL_SNAP_CENTER); // snap to center of tile
     lv_obj_clear_flag(tv, LV_OBJ_FLAG_SCROLL_ELASTIC); // disable elastic scroll
 
+    static LedRgb led{0, 0, 0};
+
     /*sequence tiles*/    
     screen_home(tv, ttgo, 0);
-    screen_leonardo(tv, ttgo, *&screenOn, ble, 1);
-    screen_donatelo(tv, ttgo, *&screenOn, ble, 2);
-    screen_rafael(tv, ttgo, *&screenOn, ble, 3);
+    screen_leonardo(tv, ttgo, *&screenOn, ble, &led, 1);
+    screen_donatelo(tv, ttgo, *&screenOn, ble, &led, 2);
+    screen_rafael(tv, ttgo, *&screenOn, ble, &led, 3);
 }
 
 void screen_sleep(TTGOClass *&ttgo, bool *&screenOn)

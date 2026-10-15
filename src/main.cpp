@@ -1,6 +1,7 @@
 #include "bootstrap.h"
 
 #include "ui/screen_main.h"
+#include "services/screen_sleep/screen_sleep_service.h"
 #include "services/bluetooth/WatchBleClient.h"
 
 TTGOClass *ttgo;

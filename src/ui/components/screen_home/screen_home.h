@@ -1,3 +1,4 @@
+#pragma once
 #include "bootstrap.h"
 #include "ui/components/widgets/widget_watch_battery.h"
 #include "ui/components/widgets/widget_clock.h"

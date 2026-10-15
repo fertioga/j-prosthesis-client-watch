@@ -1,5 +1,10 @@
 #include "bootstrap.h"
 #include "services/bluetooth/WatchBleClient.h"
+#include "ui/led_rgb.h"
+
+static constexpr uint8_t RAF_LED_R = 0xFF;
+static constexpr uint8_t RAF_LED_G = 0x00;
+static constexpr uint8_t RAF_LED_B = 0x00;
 
 struct ScreenRafaelContext {
     TTGOClass *ttgo;
@@ -7,6 +12,7 @@ struct ScreenRafaelContext {
     lv_obj_t *tv;
     lv_obj_t *tile_raf;
     WatchBleClient *ble;
+    LedRgb *led;
 };
 
 void screen_rafael_task_loop(void* param)
@@ -21,10 +27,10 @@ void screen_rafael_task_loop(void* param)
     const uint32_t HOLD_MS = 800;
     bool touching = false;
     bool holdSent = false;
-    bool ledOnRafael = false;
     unsigned long pressStartedAt = 0;
 
     WatchBleClient *ble = ctx->ble;
+    LedRgb *led = ctx->led;
 
     while (true)
     {
@@ -43,18 +49,16 @@ void screen_rafael_task_loop(void* param)
             {
                 holdSent = true;
 
-                const bool ok = ledOnRafael
-                    ? ble->send(0, 0, 0, 0, LED_EFFECT_OFF)
-                    : ble->send(0xFF, 0x00, 0x00, 0xFF, LED_EFFECT_ON);
+                const bool okRaf = apply_screen_led(ble, led, RAF_LED_R, RAF_LED_G, RAF_LED_B);
 
-                if (!ok)
+                if (!okRaf)
                 {
                     Serial.println("Falha ao enviar comando LED via BLE");
                 }
                 else
                 {
-                    ledOnRafael = !ledOnRafael;
-                    Serial.println(ledOnRafael ? "Rafael LED ON" : "Rafael LED OFF");
+                    const bool ledOff = led->r == 0 && led->g == 0 && led->b == 0;
+                    Serial.println(ledOff ? "Rafael LED OFF" : "Rafael LED ON");
                 }
             }
         }
@@ -68,18 +72,18 @@ void screen_rafael_task_loop(void* param)
     }
 }
 
-void screen_rafael_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_raf, WatchBleClient *ble)
+void screen_rafael_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_raf, WatchBleClient *ble, LedRgb *led)
 {
-    ScreenRafaelContext* ctx = new ScreenRafaelContext{ttgo, screenOn, tv, tile_raf, ble};
+    ScreenRafaelContext* ctx = new ScreenRafaelContext{ttgo, screenOn, tv, tile_raf, ble, led};
     xTaskCreate(screen_rafael_task_loop, "screen_rafael_task_loop", 2048, ctx, 1, nullptr);
 }
 
-void screen_rafael(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, int col) {
+void screen_rafael(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, LedRgb *led, int col) {
     lv_obj_t * tile_raf = lv_tileview_add_tile(tv, col, 0, LV_DIR_HOR);
 
     lv_obj_t * label = lv_label_create(tile_raf);
     lv_label_set_text(label, "RAFAEL");
     lv_obj_center(label);
 
-    screen_rafael_sleep_service_task(ttgo, screenOn, tv, tile_raf, ble);
+    screen_rafael_sleep_service_task(ttgo, screenOn, tv, tile_raf, ble, led);
 }
