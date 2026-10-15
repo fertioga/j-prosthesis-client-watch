@@ -1,3 +1,5 @@
+#pragma once
+
 #include "bootstrap.h"
 
 #include "ui/screen_main.h"

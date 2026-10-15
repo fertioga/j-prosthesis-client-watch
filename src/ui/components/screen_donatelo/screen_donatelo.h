@@ -17,7 +17,7 @@ struct ScreenDonateloContext {
     LedRgb *led;
 };
 
-void screen_donatelo_task_loop(void* param)
+inline void screen_donatelo_task_loop(void* param)
 {
     ScreenDonateloContext* ctx = static_cast<ScreenDonateloContext*>(param);
     TTGOClass* ttgo = ctx->ttgo;
@@ -75,13 +75,13 @@ void screen_donatelo_task_loop(void* param)
     }
 }
 
-void screen_donatelo_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_don, WatchBleClient *ble, LedRgb *led) 
+inline void screen_donatelo_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_don, WatchBleClient *ble, LedRgb *led) 
 {
     ScreenDonateloContext* ctx = new ScreenDonateloContext{ttgo, screenOn, tv, tile_don, ble, led};
     xTaskCreate(screen_donatelo_task_loop, "screen_donatelo_task_loop", 2048, ctx, 1, nullptr);
 }
 
-void screen_donatelo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, LedRgb *led, int col) {
+inline void screen_donatelo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, LedRgb *led, int col) {
 
     lv_obj_t * tile_don = lv_tileview_add_tile(tv, col, 0, LV_DIR_HOR);
 

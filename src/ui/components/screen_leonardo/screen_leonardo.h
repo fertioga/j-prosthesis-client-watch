@@ -17,7 +17,7 @@ struct ScreenLeoContext {
     LedRgb *led;
 };
 
-void screen_leo_task_loop(void* param)
+inline void screen_leo_task_loop(void* param)
 {
     ScreenLeoContext* ctx = static_cast<ScreenLeoContext*>(param);
     TTGOClass* ttgo = ctx->ttgo;
@@ -74,13 +74,13 @@ void screen_leo_task_loop(void* param)
     }
 }
 
-void screen_leo_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_leo, WatchBleClient *ble, LedRgb *led) 
+inline void screen_leo_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_leo, WatchBleClient *ble, LedRgb *led) 
 {
     ScreenLeoContext* ctx = new ScreenLeoContext{ttgo, screenOn, tv, tile_leo, ble, led};
     xTaskCreate(screen_leo_task_loop, "screen_leo_task_loop", 2048, ctx, 1, nullptr);
 }
 
-void screen_leonardo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, LedRgb *led, int col) {
+inline void screen_leonardo(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, LedRgb *led, int col) {
     lv_obj_t * tile_leo = lv_tileview_add_tile(tv, col, 0, LV_DIR_HOR);
     
     // lv_obj_t * label = lv_label_create(tile_leo);

@@ -15,7 +15,7 @@ struct ScreenRafaelContext {
     LedRgb *led;
 };
 
-void screen_rafael_task_loop(void* param)
+inline void screen_rafael_task_loop(void* param)
 {
     ScreenRafaelContext* ctx = static_cast<ScreenRafaelContext*>(param);
     TTGOClass* ttgo = ctx->ttgo;
@@ -72,13 +72,13 @@ void screen_rafael_task_loop(void* param)
     }
 }
 
-void screen_rafael_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_raf, WatchBleClient *ble, LedRgb *led)
+inline void screen_rafael_sleep_service_task(TTGOClass *&ttgo, bool *&screenOn, lv_obj_t *&tv, lv_obj_t *&tile_raf, WatchBleClient *ble, LedRgb *led)
 {
     ScreenRafaelContext* ctx = new ScreenRafaelContext{ttgo, screenOn, tv, tile_raf, ble, led};
     xTaskCreate(screen_rafael_task_loop, "screen_rafael_task_loop", 2048, ctx, 1, nullptr);
 }
 
-void screen_rafael(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, LedRgb *led, int col) {
+inline void screen_rafael(lv_obj_t * tv, TTGOClass * ttgo, bool * screenOn, WatchBleClient * ble, LedRgb *led, int col) {
     lv_obj_t * tile_raf = lv_tileview_add_tile(tv, col, 0, LV_DIR_HOR);
 
     lv_obj_t * label = lv_label_create(tile_raf);

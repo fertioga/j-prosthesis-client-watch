@@ -9,7 +9,7 @@
 #include "ui/led_rgb.h"
 
 
-void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryLevel, WatchBleClient *ble) 
+inline void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryLevel, WatchBleClient *ble) 
 {
     ttgo = TTGOClass::getWatch();
     ttgo->begin();
@@ -32,7 +32,7 @@ void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryLevel, W
     screen_rafael(tv, ttgo, *&screenOn, ble, &led, 3);
 }
 
-void screen_sleep(TTGOClass *&ttgo, bool *&screenOn)
+inline void screen_sleep(TTGOClass *&ttgo, bool *&screenOn)
 {
     ttgo->displaySleep();
     ttgo->closeBL();
@@ -41,7 +41,7 @@ void screen_sleep(TTGOClass *&ttgo, bool *&screenOn)
     delay(20);
 }
 
-void screen_wakeup(TTGOClass *&ttgo, bool *&screenOn)
+inline void screen_wakeup(TTGOClass *&ttgo, bool *&screenOn)
 {
     ttgo->displayWakeup();
     ttgo->openBL();
@@ -50,7 +50,7 @@ void screen_wakeup(TTGOClass *&ttgo, bool *&screenOn)
     delay(20); // Delay to avoid screen artifacts on wakeup
 }
 
-void userInteraction(TTGOClass *&ttgo, bool *&screenOn)
+inline void userInteraction(TTGOClass *&ttgo, bool *&screenOn)
 {
     if (!*screenOn)
     {
