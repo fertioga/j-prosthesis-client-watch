@@ -5,6 +5,7 @@
 static constexpr uint8_t RAF_LED_R = 0xFF;
 static constexpr uint8_t RAF_LED_G = 0x00;
 static constexpr uint8_t RAF_LED_B = 0x00;
+static constexpr LedEffectBle RAF_LED_EFFECT = LED_EFFECT_SOS;
 
 struct ScreenRafaelContext {
     TTGOClass *ttgo;
@@ -49,7 +50,7 @@ inline void screen_rafael_task_loop(void* param)
             {
                 holdSent = true;
 
-                const bool okRaf = apply_screen_led(ble, led, RAF_LED_R, RAF_LED_G, RAF_LED_B);
+                const bool okRaf = apply_screen_led(ble, led, RAF_LED_R, RAF_LED_G, RAF_LED_B, RAF_LED_EFFECT);
 
                 if (!okRaf)
                 {

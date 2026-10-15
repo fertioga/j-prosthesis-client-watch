@@ -7,6 +7,7 @@
 static constexpr uint8_t LEO_LED_R = 0x00;
 static constexpr uint8_t LEO_LED_G = 0x00;
 static constexpr uint8_t LEO_LED_B = 0xFF;
+static constexpr LedEffectBle LEO_LED_EFFECT = LED_EFFECT_POLICY;
 
 struct ScreenLeoContext {
     TTGOClass *ttgo;
@@ -51,7 +52,7 @@ inline void screen_leo_task_loop(void* param)
             {
                 holdSent = true;
 
-                const bool okLeo = apply_screen_led(ble, led, LEO_LED_R, LEO_LED_G, LEO_LED_B);
+                const bool okLeo = apply_screen_led(ble, led, LEO_LED_R, LEO_LED_G, LEO_LED_B, LEO_LED_EFFECT);
 
                 if (!okLeo)
                 {

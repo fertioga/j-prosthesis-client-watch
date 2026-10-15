@@ -4,9 +4,10 @@
 #include "services/bluetooth/WatchBleClient.h"
 #include "ui/led_rgb.h"
 
-static constexpr uint8_t DON_LED_R = 0x90;
-static constexpr uint8_t DON_LED_G = 0x13;
-static constexpr uint8_t DON_LED_B = 0xFE;
+static constexpr uint8_t DON_LED_R = 0xFF;
+static constexpr uint8_t DON_LED_G = 0xFF;
+static constexpr uint8_t DON_LED_B = 0xFF;
+static constexpr LedEffectBle DON_LED_EFFECT = LED_EFFECT_ON;
 
 struct ScreenDonateloContext {
     TTGOClass *ttgo;
@@ -52,7 +53,7 @@ inline void screen_donatelo_task_loop(void* param)
             {
                 holdSent = true;
 
-                const bool okDon = apply_screen_led(ble, led, DON_LED_R, DON_LED_G, DON_LED_B);
+                const bool okDon = apply_screen_led(ble, led, DON_LED_R, DON_LED_G, DON_LED_B, DON_LED_EFFECT);
 
                 if (!okDon)
                 {
