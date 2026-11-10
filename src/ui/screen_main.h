@@ -27,7 +27,7 @@ inline void screen_main(TTGOClass *&ttgo, bool *&screenOn, float *&watchBatteryL
     static LedRgb led{0, 0, 0, LED_EFFECT_OFF};
 
     /*sequence tiles*/    
-    screen_home(tv, ttgo, 0);
+    screen_home(tv, ttgo, screenOn, ble, 0);
     screen_leonardo(tv, ttgo, *&screenOn, ble, &led, 1);
     screen_donatelo(tv, ttgo, *&screenOn, ble, &led, 2);
     screen_rafael(tv, ttgo, *&screenOn, ble, &led, 3);

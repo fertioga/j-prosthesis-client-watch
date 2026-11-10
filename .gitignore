@@ -6,6 +6,15 @@
 .DS_Store
 .idea/
 build/
+bin/
+obj/
+out/
 *.o
+*.a
+*.so
+*.exe
+*.dll
+*.tmp
+*.swp
 *.log
 .env*

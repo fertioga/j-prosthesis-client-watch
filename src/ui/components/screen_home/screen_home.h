@@ -2,8 +2,9 @@
 #include "bootstrap.h"
 #include "ui/components/widgets/widget_watch_battery.h"
 #include "ui/components/widgets/widget_clock.h"
+#include "ui/components/widgets/widget_prosthesis_battery.h"
 
-inline void screen_home(lv_obj_t * tv, TTGOClass *ttgo, int col) 
+inline void screen_home(lv_obj_t * tv, TTGOClass *ttgo, bool *screenOn, WatchBleClient *ble, int col) 
 {
     lv_obj_t * tile1 = lv_tileview_add_tile(tv, col, 0, LV_DIR_HOR);
    
@@ -14,4 +15,5 @@ inline void screen_home(lv_obj_t * tv, TTGOClass *ttgo, int col)
     widget_watch_battery_service_task(ttgo, tile1);
     delay(1000); 
     widget_clock_task(ttgo, tile1);
+    widget_prosthesis_battery_service_task(ble, tile1, screenOn);
 }   

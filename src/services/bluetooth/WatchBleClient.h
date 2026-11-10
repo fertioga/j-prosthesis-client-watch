@@ -44,9 +44,26 @@ enum LedEffectBle : uint8_t
 
 class WatchBleClient
 {
+public:
+    struct ProsthesisBatteryReading
+    {
+        bool known;
+        uint8_t percent;
+    };
+
 private:
+    static constexpr uint16_t BLE_BATTERY_SERVICE_UUID = 0x180F;
+    static constexpr uint16_t BLE_BATTERY_LEVEL_UUID = 0x2A19;
+    static constexpr uint32_t BLE_BATTERY_FRESH_MS = 30000;
+
     NimBLEClient* client = nullptr;
     NimBLERemoteCharacteristic* volatile ledChar = nullptr;
+    volatile bool batterySubscribed = false;
+
+    bool known = false;
+    uint8_t percent = 0;
+    uint32_t seenAtMs = 0;
+    portMUX_TYPE batteryMux = portMUX_INITIALIZER_UNLOCKED;
 
     bool connectToDevice(const NimBLEAdvertisedDevice* dev)
     {
@@ -95,9 +112,75 @@ private:
 
         ledChar = characteristic;
 
+        subscribeProsthesisBattery();
+
         Serial.println("BLE conectado");
 
         return true;
+    }
+
+    /* Battery is optional: failing here keeps the LED session alive */
+    void subscribeProsthesisBattery()
+    {
+        NimBLERemoteService* service =
+            client->getService(NimBLEUUID(BLE_BATTERY_SERVICE_UUID));
+
+        NimBLERemoteCharacteristic* characteristic =
+            service ? service->getCharacteristic(NimBLEUUID(BLE_BATTERY_LEVEL_UUID)) : nullptr;
+
+        if (!characteristic || !characteristic->canNotify())
+        {
+            Serial.println("Battery Level indisponível");
+            return;
+        }
+
+        const bool subscribed = characteristic->subscribe(
+            true,
+            [this](NimBLERemoteCharacteristic*, uint8_t* data, size_t length, bool)
+            {
+                noteProsthesisBattery(std::string(reinterpret_cast<char*>(data), length));
+            }
+        );
+
+        if (!subscribed)
+        {
+            Serial.println("Falha ao assinar Battery Level");
+            return;
+        }
+
+        noteProsthesisBattery(characteristic->readValue());
+        batterySubscribed = true;
+    }
+
+    void noteProsthesisAdvertisement(const NimBLEAdvertisedDevice* dev)
+    {
+        if (!dev)
+            return;
+
+        noteProsthesisBattery(dev->getServiceData(
+            NimBLEUUID((uint16_t)BLE_BATTERY_SERVICE_UUID)
+        ));
+    }
+
+    void noteProsthesisBattery(const std::string& data)
+    {
+        if (data.size() == 1)
+        {
+            const uint8_t level = static_cast<uint8_t>(data[0]);
+            if (level > 100)
+                return;
+
+            portENTER_CRITICAL(&batteryMux);
+            known = true;
+            percent = level;
+            seenAtMs = millis();
+            portEXIT_CRITICAL(&batteryMux);
+            return;
+        }
+
+        portENTER_CRITICAL(&batteryMux);
+        known = false;
+        portEXIT_CRITICAL(&batteryMux);
     }
 
     static void connectionTask(void* param)
@@ -149,11 +232,13 @@ public:
     bool connect()
     {
         ledChar = nullptr;
+        batterySubscribed = false;
 
         NimBLEScan* scan =
             NimBLEDevice::getScan();
 
         scan->setActiveScan(true);
+        scan->setDuplicateFilter(0);
 
         NimBLEScanResults results =
             scan->getResults(BLE_SCAN_DURATION_MS);
@@ -183,6 +268,7 @@ public:
                     nameMatch ? "nome" : "uuid"
                 );
 
+                noteProsthesisAdvertisement(dev);
                 found = true;
                 connected = connectToDevice(dev);
                 break;
@@ -216,6 +302,30 @@ public:
     bool isConnected()
     {
         return client && client->isConnected() && ledChar;
+    }
+
+    ProsthesisBatteryReading prosthesisBattery()
+    {
+        bool knownCopy;
+        uint8_t percentCopy;
+        uint32_t seenAtCopy;
+
+        portENTER_CRITICAL(&batteryMux);
+        knownCopy = known;
+        percentCopy = percent;
+        seenAtCopy = seenAtMs;
+        portEXIT_CRITICAL(&batteryMux);
+
+        if (!knownCopy)
+            return {false, 0};
+
+        /* Notify only fires on change: while subscribed the server owns staleness */
+        const bool live = batterySubscribed && isConnected();
+
+        if (!live && millis() - seenAtCopy >= BLE_BATTERY_FRESH_MS)
+            return {false, 0};
+
+        return {true, percentCopy};
     }
 
     bool send(
